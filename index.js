@@ -1,7 +1,7 @@
 /*
  * 画师串导出 · 柏宝绘辅助插件
  * 只读取柏宝绘的画师串设置与图库，不写入、不修改任何数据。
- * 生成时间：2026-11-13T21:04:15.296Z
+ * 生成时间：2026-11-13T21:42:13.871Z
  */
 (function () {
 'use strict';
@@ -478,8 +478,8 @@ async function downloadImagesZip(selected, onProgress, signal) {
 const STYLE_ID = 'bbe-style';
 
 const CSS = `
-.bbe-mask{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);padding:12px;box-sizing:border-box}
-.bbe-panel{width:min(980px,100%);height:min(560px,78vh);display:flex;flex-direction:column;background:var(--SmartThemeBlurTintColor,#17181c);color:var(--SmartThemeBodyColor,#e6e6e6);border:1px solid rgba(255,255,255,.1);border-radius:10px;box-shadow:0 20px 56px rgba(0,0,0,.55);font-size:13px;overflow:hidden}
+.bbe-mask{position:fixed;top:0;left:0;right:0;bottom:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);padding:12px;box-sizing:border-box;overflow:auto}
+.bbe-panel{display:flex;flex-direction:column;background:var(--SmartThemeBlurTintColor,#17181c);color:var(--SmartThemeBodyColor,#e6e6e6);border:1px solid rgba(255,255,255,.1);border-radius:10px;box-shadow:0 20px 56px rgba(0,0,0,.55);font-size:13px;overflow:hidden;flex:0 0 auto;width:980px;max-width:100%;height:560px;max-height:100%}
 
 /* 顶部：标题 + 页签 + 关闭，只有一行 */
 .bbe-head{display:flex;align-items:center;gap:14px;padding:0 14px;height:44px;flex:0 0 auto;border-bottom:1px solid rgba(255,255,255,.08)}
@@ -537,7 +537,7 @@ const CSS = `
 /* 大图预览 */
 .bbe-lightbox{position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.82);padding:24px;box-sizing:border-box;cursor:zoom-out}
 .bbe-lightbox-inner{max-width:100%;max-height:100%;display:flex;flex-direction:column;align-items:center;gap:8px}
-.bbe-lightbox-inner img{max-width:100%;max-height:calc(100vh - 90px);object-fit:contain;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.7)}
+.bbe-lightbox-inner img{max-width:100%;max-height:700px;object-fit:contain;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.7)}
 .bbe-lightbox-cap{font-size:12px;opacity:.7}
 
 /* 悬浮进度窗：只有一条进度和 x/x */
@@ -579,10 +579,11 @@ const CSS = `
 @media (max-width: 700px){
   .bbe-mask{padding:0;align-items:stretch}
   .bbe-panel{
-    width:100%;
-    max-width:100%;
-    height:100%;
+    width:340px;
+    max-width:none;
+    height:560px;
     max-height:none;
+    margin:0;
     border-radius:0;
     border:0;
     font-size:14px;
@@ -638,7 +639,7 @@ const CSS = `
   .bbe-float-text{font-size:12px}
 
   .bbe-lightbox{padding:8px}
-  .bbe-lightbox-inner img{max-height:calc(100vh - 60px)}
+  .bbe-lightbox-inner img{max-height:640px}
 }
 
 /* 触屏设备：去掉依赖悬停的效果，点击即选中 */
@@ -1189,8 +1190,49 @@ function openExportDialog() {
     renderImage();
   });
 
+  /**
+   * 用实测像素给遮罩和面板定尺寸。
+   * 不用 vh / dvh / 百分比：酒馆内嵌布局和手机地址栏会让这些值算错。
+   */
+  function layout() {
+    const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    if (!vw || !vh) return;
+
+    mask.style.width = `${vw}px`;
+    mask.style.height = `${vh}px`;
+
+    const isPhone = vw <= 700;
+
+    if (isPhone) {
+      mask.style.padding = '0px';
+      panel.style.width = `${vw}px`;
+      panel.style.height = `${vh}px`;
+      panel.style.maxWidth = 'none';
+      panel.style.maxHeight = 'none';
+      panel.style.borderRadius = '0px';
+    } else {
+      const pad = 12;
+      mask.style.padding = `${pad}px`;
+      const w = Math.min(980, vw - pad * 2);
+      const h = Math.min(580, vh - pad * 2);
+      panel.style.width = `${w}px`;
+      panel.style.height = `${h}px`;
+      panel.style.maxWidth = `${vw - pad * 2}px`;
+      panel.style.maxHeight = `${vh - pad * 2}px`;
+      panel.style.borderRadius = '10px';
+    }
+  }
+
+  layout();
+
+  const onResize = () => layout();
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+
   mask.appendChild(panel);
   document.body.appendChild(mask);
+  requestAnimationFrame(layout);
   renderArtist();
 }
 
