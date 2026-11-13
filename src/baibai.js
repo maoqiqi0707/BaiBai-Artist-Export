@@ -1,7 +1,5 @@
 /**
- * 画师串导出 · 柏宝绘辅助插件
- *
- * 只做一件事：把柏宝绘里保存的画师串读出来，整理成可以复制或下载的文本。
+ * 读取柏宝绘的画师串数据
  *
  * 安全边界（重要）：
  * - 只读 extensionSettings['baibai_image']，绝不对它做任何写入。
@@ -13,7 +11,6 @@
 const SETTINGS_KEY = 'baibai_image';
 
 // 柏宝绘的内置只读画师串库。这些不在用户设置里，单独列出来才不会漏。
-// 来源：柏宝绘打包文件中 Ki 常量，随版本变化，读不到时忽略。
 const BUILTIN_ARTISTS = [
   {
     id: 'bi_default',
@@ -115,15 +112,6 @@ export function listArtistPresets() {
     available: nai !== null,
     activeId,
     items,
-  };
-}
-
-/** 渠道级的正面质量词与负面词，仅用于界面提示「跟随渠道时实际是什么」。 */
-export function readChannelDefaults() {
-  const nai = readBaiBaiNaiSettings();
-  return {
-    quality: String(nai?.qualityTags ?? '').trim(),
-    negative: String(nai?.undesiredContent ?? '').trim(),
   };
 }
 
